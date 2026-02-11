@@ -1,0 +1,10 @@
+##### 这是用于记录、查询常用命令的文件，请勿删除或重命名 #####
+# hugo 命令集合
+hugo new site myblog                                    # hugo 创建新站点目录
+hugo server -D --bind 0.0.0.0 -p 13030 --baseURL /      # hugo 启动测试服务器
+
+# 启动 nginx 挂载某个 hugo 站点
+docker run -d --restart=always --name hugo-nginx -p 80:80 -p 443:443 -v /root/workspace/hugo-project/thulium-blog/public:/usr/share/nginx/html:ro nginx
+
+# 查询当前目录大小并排序，用于清理不必要文件
+du -h --max-depth=1 | sort -hr

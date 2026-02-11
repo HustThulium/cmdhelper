@@ -1,0 +1,14 @@
+#!/bin/bash
+
+HELPER_FILE="/root/workspace/cmdhelper/helpers.txt"
+
+if [ ! -f "$HELPER_FILE" ]; then
+    echo "❌ 文件不存在: $HELPER_FILE"
+    exit 1
+fi
+
+if [ $# -eq 0 ]; then
+    cat "$HELPER_FILE" | grep -v "#####"
+else
+    grep --color=auto -i "$1" "$HELPER_FILE"
+fi
