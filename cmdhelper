@@ -9,8 +9,60 @@ if [ ! -f "$HELPER_FILE" ]; then
     exit 1
 fi
 
-if [ $# -eq 0 ]; then
-    cat "$HELPER_FILE" | grep -v "#####"
-else
-    grep --color=auto -i "$1" "$HELPER_FILE"
+# 添加模式：交互式追加「注释 + 命令 + 空行」到 helpers.txt
+if [ "$1" = "-add" ] || [ "$1" = "--add" ]; then
+    echo "请输入这条命令的注释（不需要写 #，直接写说明，留空则取消）:"
+    read -r new_comment
+    if [ -z "$new_comment" ]; then
+        echo "已取消添加。"
+        exit 0
+    fi
+
+    echo "请输入具体的命令（必填）:"
+    read -r new_cmd
+    if [ -z "$new_cmd" ]; then
+        echo "❌ 命令不能为空，已取消添加。" >&2
+        exit 1
+    fi
+
+    {
+        echo
+        echo "# $new_comment"
+        echo "$new_cmd"
+    } >> "$HELPER_FILE" || {
+        echo "❌ 写入失败: $HELPER_FILE" >&2
+        exit 1
+    }
+
+    echo "✅ 已添加以下命令："
+    echo "# $new_comment"
+    echo "$new_cmd"
+    exit 0
 fi
+
+# 按「注释 + 命令 + 空行」块解析；有参数时只输出匹配到的块
+awk -v kw="${1:-}" '
+BEGIN { kw_lower = tolower(kw); comment = ""; cmd = "" }
+/^#####/ { next }
+/^#/ && !/^#####/ {
+    if (comment != "" && cmd != "") {
+        if (kw == "" || index(tolower(comment), kw_lower) || index(tolower(cmd), kw_lower))
+            print comment ORS cmd ORS ""
+        comment = ""; cmd = ""
+    }
+    comment = $0
+    next
+}
+/^[^#]/ && $0 != "" {
+    cmd = $0
+    if (kw == "" || index(tolower(comment), kw_lower) || index(tolower(cmd), kw_lower))
+        print comment ORS cmd ORS ""
+    comment = ""; cmd = ""
+    next
+}
+END {
+    if (comment != "" && cmd != "")
+        if (kw == "" || index(tolower(comment), kw_lower) || index(tolower(cmd), kw_lower))
+            print comment ORS cmd ORS ""
+}
+' "$HELPER_FILE"
